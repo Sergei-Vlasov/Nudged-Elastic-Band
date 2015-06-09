@@ -211,7 +211,8 @@ class Image:
                 if maxForce > normOfForce[i]: maxForce = normOfForce[i]
             itr += 1
 
-class Cluster:
+
+class Band:
     def __init__(self, listOfImages):
         self.size = len(listOfImages)
         self.listOfImages = listOfImages
@@ -275,11 +276,13 @@ class Cluster:
         t = np.array(t)
         return np.array(result).flatten(), t.flatten()
 
+
 def distance(a, b):
     d = 0
     for i in range(len(a)):
         d += ((np.arctan2(np.linalg.norm(np.cross(a[i], b[i])), np.dot(a[i], b[i])) + 2 * np.pi) % (2 * np.pi)) ** 2
     return np.sqrt(d)
+
 
 def rotationMatrix(vector, angle):
     x = vector[0]
