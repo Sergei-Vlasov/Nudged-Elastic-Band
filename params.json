@@ -1,0 +1,4 @@
+{
+    "system": {"n":6,"M":166, "K":4550, "K_p":17991,"J":0,"R":5.0e-5,"H":0,"V":2.397e-16,"H_angle":0},
+    "programm": {"m":18,"m_min":8,"m_max":8,"k_spring":1,"output_path":"data/"}
+}
