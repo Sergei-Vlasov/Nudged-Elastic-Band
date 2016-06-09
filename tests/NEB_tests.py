@@ -57,7 +57,7 @@ C = plt.contour(X, Y,f([X, Y]), 15, colors='black', linewidth=.5)
 plt.scatter(x0[0,:], x0[1,:])
 plt.show()
 
-min_en_path = find_MEP(f, x0, tol=1e-8, max_iter=50000)
+min_en_path = find_MEP(f, x0)
 
 plt.contourf(X, Y, f([X, Y]), 15, alpha=.75, cmap=plt.cm.hot)
 C = plt.contour(X, Y,f([X, Y]), 15, colors='black', linewidth=.5)
