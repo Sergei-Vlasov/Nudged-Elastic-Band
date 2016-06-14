@@ -50,14 +50,14 @@ for i in range(2):
 n = 100
 x = np.linspace(0.5, 3.2, n)
 y = np.linspace(-3, 3, n)
-X,Y = np.meshgrid(x, y)
+X, Y = np.meshgrid(x, y)
 plt.figure(1)
 plt.contourf(X, Y, f([X, Y]), 15, alpha=.75, cmap=plt.cm.hot)
-C = plt.contour(X, Y,f([X, Y]), 15, colors='black', linewidth=.5)
-plt.scatter(x0[0,:], x0[1,:])
+C = plt.contour(X, Y, f([X, Y]), 15, colors='black', linewidth=.5)
+plt.scatter(x0[0, :], x0[1, :])
 plt.show()
 
-min_en_path = find_MEP(f, x0)
+min_en_path = find_MEP(f, x0, method='tangent_aware')
 
 plt.contourf(X, Y, f([X, Y]), 15, alpha=.75, cmap=plt.cm.hot)
 C = plt.contour(X, Y,f([X, Y]), 15, colors='black', linewidth=.5)
