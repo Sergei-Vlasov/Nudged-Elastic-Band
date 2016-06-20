@@ -57,10 +57,10 @@ def update_SD(x, g, tau, alpha, k_sp):
     return x, force_max
 
 
-def update_tagentaware_proj(x, g, tau, alpha):
+def update_tagentaware_proj(x, g, tau, h):
     (M, N) = x.shape
     grad_opt = g - np.array([np.dot(g[:, j], tau[:, j]) * tau[:, j] for j in range(N-2)]).transpose()
-    x[:, 1:-1] -= alpha * grad_opt
+    x[:, 1:-1] -= h * grad_opt
     dx = x[:, 1:] - x[:, :-1]
     beta = -0.5 * ((dx[:, 1:] - dx[:, :-1]) * (dx[:, 1:] + dx[:, :-1])).sum(axis=0)
     plus = (tau * dx[:, 1:]).sum(axis=1)
