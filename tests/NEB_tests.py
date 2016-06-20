@@ -33,33 +33,72 @@ def V_LEPS(r_AB, r_AC):
                     J(r_AC, d_AC) * J(r_BC, d_BC) / c / b)
 
 
-def f(x):
+def fun_leps(x):
     k_c = .2025
     c = 1.154
     r_AC = 3.742
     return V_LEPS(x[0], r_AC) + 2 * k_c * (x[0] - .5 * r_AC + x[1] / c) ** 2
 
-delta = 0.1
-x_initial = minimize(f, [0.75, 1.0]).x
-x_final = minimize(f, [3.0, -1.0]).x
-N = 12
-x0 = np.array([x_initial + (x_final - x_initial) * i / (N-1) for i in range(N)]).transpose()
-for i in range(2):
-    for j in range(1, N-1):
-        x0[i, j] += random.uniform(0, delta)
-n = 100
-x = np.linspace(0.5, 3.2, n)
-y = np.linspace(-3, 3, n)
-X, Y = np.meshgrid(x, y)
-plt.figure(1)
-plt.contourf(X, Y, f([X, Y]), 15, alpha=.75, cmap=plt.cm.hot)
-C = plt.contour(X, Y, f([X, Y]), 15, colors='black', linewidth=.5)
-plt.scatter(x0[0, :], x0[1, :])
-plt.show()
 
-min_en_path = find_MEP(f, x0, method='tangent_aware')
+def fun_himmel(x):
+    return (x[0] ** 2 - x[1] - 11) ** 2 + (x[0] + x[1] ** 2 - 7) ** 2
 
-plt.contourf(X, Y, f([X, Y]), 15, alpha=.75, cmap=plt.cm.hot)
-C = plt.contour(X, Y,f([X, Y]), 15, colors='black', linewidth=.5)
-plt.plot(min_en_path[0,:], min_en_path[1,:], 'o-')
-plt.show()
+def test_leps():
+    delta = 0.1
+    x_initial = minimize(fun_leps, [0.75, 1.0]).x
+    x_final = minimize(fun_leps, [3.0, -1.0]).x
+    N = 12
+    x0 = np.array([x_initial + (x_final - x_initial) * i / (N-1) for i in range(N)]).transpose()
+    for i in range(2):
+        for j in range(1, N-1):
+            x0[i, j] += random.uniform(0, delta)
+    n = 100
+    x = np.linspace(0.5, 3.2, n)
+    y = np.linspace(-3, 3, n)
+    X, Y = np.meshgrid(x, y)
+    plt.figure(1)
+    plt.contourf(X, Y, fun_leps([X, Y]), 15, alpha=.75, cmap=plt.cm.hot)
+    C = plt.contour(X, Y, fun_leps([X, Y]), 15, colors='black', linewidth=.5)
+    plt.scatter(x0[0, :], x0[1, :])
+    plt.show()
+
+    min_en_path = find_MEP(fun_leps, x0, method='tangent_aware')
+
+    plt.contourf(X, Y, fun_leps([X, Y]), 15, alpha=.75, cmap=plt.cm.hot)
+    C = plt.contour(X, Y,fun_leps([X, Y]), 15, colors='black', linewidth=.5)
+    plt.plot(min_en_path[0,:], min_en_path[1,:], 'o-')
+    plt.show()
+
+def test_himmel():
+    delta = 0.1
+    x_initial = minimize(fun_himmel, [-3.0, 3.0]).x
+    x_final = minimize(fun_himmel, [3.0, -3.0]).x
+    N = 15
+    x0 = np.array([x_initial + (x_final - x_initial) * i / (N-1) for i in range(N)]).transpose()
+    for i in range(2):
+        for j in range(1, N-1):
+            x0[i, j] += random.uniform(0, delta)
+    n = 100
+    x = np.linspace(-4.0, 4.0, n)
+    y = np.linspace(-4.0, 4.0, n)
+    X, Y = np.meshgrid(x, y)
+    plt.figure(1)
+    plt.contourf(X, Y, fun_himmel([X, Y]), 15, alpha=.75, cmap=plt.cm.hot)
+    C = plt.contour(X, Y, fun_himmel([X, Y]), 15, colors='black', linewidth=.5)
+    plt.scatter(x0[0, :], x0[1, :])
+    plt.show()
+
+    min_en_path_0 = find_MEP(fun_himmel, x0, max_iter=10000, method='SD', improved_tangent=True)
+    # min_en_path_1 = find_MEP(fun_himmel, x0, max_iter=2, method='tangent_aware')
+    # min_en_path_2 = find_MEP(fun_himmel, x0, max_iter=3, method='tangent_aware')
+
+    plt.contourf(X, Y, fun_himmel([X, Y]), 15, alpha=.75, cmap=plt.cm.hot)
+    C = plt.contour(X, Y,fun_himmel([X, Y]), 15, colors='black', linewidth=.5)
+    plt.plot(min_en_path_0[0,:], min_en_path_0[1,:], 'o-')
+    # plt.plot(min_en_path_1[0,:], min_en_path_1[1,:], 'o-')
+    # plt.plot(min_en_path_2[0,:], min_en_path_2[1,:], 'o-')
+    plt.show()
+
+test_himmel()
+
+
