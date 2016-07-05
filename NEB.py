@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
+from __future__ import division, print_function, absolute_import
+
+__all__ = ['find_MEP']
+
 import numpy as np
 from scipy.optimize import approx_fprime
+
 
 __author__ = 'Sergei'
 
@@ -75,7 +80,24 @@ def update_tagentaware_proj(x, g, tau, h):
     return x, force_max
 
 
-def find_MEP(fun, x0, tol=1e-6, max_iter=10000, improved_tangent=True, method=None):
+def find_MEP(fun, x0, args=(), jac=None, tol=1e-6, max_iter=10000, improved_tangent=True, method=None):
+
+    x0 = np.asarray(x0)
+    eps = np.sqrt(np.finfo(float).eps)
+    if x0.dtype.kind in np.typecodes["AllInteger"]:
+        x0 = np.asarray(x0, dtype=float)
+
+    if not isinstance(args, tuple):
+        args = (args,)
+
+    def fun_wrapped(x):
+        return np.atleast_1d(fun(x, *args))
+
+    if jac is None:
+        jac = approx_fprime
+        kwargs = (fun, eps)
+    else:
+        kwargs = ()
 
     if method is None:
         method = 'SD'
@@ -88,10 +110,9 @@ def find_MEP(fun, x0, tol=1e-6, max_iter=10000, improved_tangent=True, method=No
     path = x0
     (M, N) = path.shape
     alpha = .01
-    eps = np.sqrt(np.finfo(float).eps)
     while (force_max > tol) and (itr < max_iter):
-        tau = calculate_tangent(fun, path, improved_tangent)
-        gradient = np.array([approx_fprime(path[:, j], fun, eps) for j in range(1, N-1)]).transpose()
+        tau = calculate_tangent(fun_wrapped, path, improved_tangent)
+        gradient = np.array([jac(path[:, j], *kwargs) for j in range(1, N-1)]).transpose()
 
         if meth == 'sd':
             path, force_max = update_SD(path, gradient, tau, alpha, k_sp)
@@ -99,7 +120,7 @@ def find_MEP(fun, x0, tol=1e-6, max_iter=10000, improved_tangent=True, method=No
             path, force_max = update_tagentaware_proj(path, gradient, tau, alpha)
         itr += 1
     if force_max < tol:
-        print "MEP was successfully found in %i iterations" % itr
+        print("MEP was successfully found in %i iterations" % itr)
     else:
-        print "Max. force projection:", force_max
+        print("Max. force projection: %f" % force_max)
     return path
