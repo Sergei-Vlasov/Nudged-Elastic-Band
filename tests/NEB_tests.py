@@ -67,7 +67,7 @@ def test_leps():
     plt.scatter(x0[0, :], x0[1, :])
     plt.show()
 
-    min_en_path = find_MEP(fun_leps, x0, max_iter=10000, method='tangent_aware')
+    min_en_path = find_MEP(fun_leps, x0, max_iter=10000, repartition='repar_tangent')
 
     plt.contourf(X, Y, fun_leps([X, Y]), 15, alpha=.75, cmap=plt.cm.hot)
     C = plt.contour(X, Y,fun_leps([X, Y]), 15, colors='black', linewidth=.5)
@@ -93,7 +93,7 @@ def test_himmel():
     plt.scatter(x0[0, :], x0[1, :])
     plt.show()
 
-    min_en_path_0 = find_MEP(fun_himmel, x0, jac=jac_himmel, method='SD', improved_tangent=True)
+    min_en_path_0 = find_MEP(fun_himmel, x0, jac=jac_himmel, repartition='repar')
     # min_en_path_1 = find_MEP(fun_himmel, x0, max_iter=2, method='tangent_aware')
     # min_en_path_2 = find_MEP(fun_himmel, x0, max_iter=3, method='tangent_aware')
 

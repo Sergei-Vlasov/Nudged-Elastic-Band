@@ -47,25 +47,15 @@ def calculate_tangent(fun, x, improved_tangent):
     return tau
 
 
-def update_SD(x, g, tau, alpha, k_sp):
+def update_SD(x, g, tau, alpha):
     (M, N) = x.shape
-    temp_minus = x[:, 1:-1] - x[:, :-2]
-    norm_temp_minus = np.linalg.norm(temp_minus, axis=0)
-    temp_plus = x[:, 2:] - x[:, 1:-1]
-    norm_temp_plus = np.linalg.norm(temp_plus, axis=0)
     grad_trans = g - np.array([np.dot(g[:, j], tau[:, j]) * tau[:, j] for j in range(N - 2)]).transpose()
-    dist = -k_sp * (norm_temp_plus - norm_temp_minus)
-    grad_spring = dist * tau
-    grad_opt = grad_spring + grad_trans
     force_max = max(np.linalg.norm(grad_trans, axis=0))
-    x[:, 1:-1] -= alpha * grad_opt
+    x[:, 1:-1] -= alpha * grad_trans
     return x, force_max
 
 
-def update_tagentaware_proj(x, g, tau, h):
-    (M, N) = x.shape
-    grad_opt = g - np.array([np.dot(g[:, j], tau[:, j]) * tau[:, j] for j in range(N-2)]).transpose()
-    x[:, 1:-1] -= h * grad_opt
+def repartition_tagentaware_proj(x, tau):
     dx = x[:, 1:] - x[:, :-1]
     beta = -0.5 * ((dx[:, 1:] - dx[:, :-1]) * (dx[:, 1:] + dx[:, :-1])).sum(axis=0)
     plus = (tau * dx[:, 1:]).sum(axis=1)
@@ -73,14 +63,33 @@ def update_tagentaware_proj(x, g, tau, h):
     alpha = np.zeros((x.shape[1] - 2, x.shape[1] - 2))
     np.fill_diagonal(alpha[:-1, 1:], minus[1:])
     np.fill_diagonal(alpha[1:, :-1], plus[1:])
-    np.fill_diagonal(alpha, -plus[1:]-minus[:-1])
+    np.fill_diagonal(alpha, -plus[1:] - minus[:-1])
     a = np.linalg.solve(alpha, beta)
     x[:, 1:-1] += tau * a
-    force_max = max(np.linalg.norm(grad_opt, axis=0))
-    return x, force_max
+    return x
 
 
-def find_MEP(fun, x0, args=(), jac=None, tol=1e-6, max_iter=10000, improved_tangent=True, method=None):
+def repartition_spring(x, tau, k):
+    temp_minus = x[:, 1:-1] - x[:, :-2]
+    norm_temp_minus = np.linalg.norm(temp_minus, axis=0)
+    temp_plus = x[:, 2:] - x[:, 1:-1]
+    norm_temp_plus = np.linalg.norm(temp_plus, axis=0)
+    dist = k * (norm_temp_plus - norm_temp_minus)
+    x[:, 1:-1] += dist * tau
+    return x
+
+
+def repartition_repar(x):
+    (M, N) = x.shape
+    L = np.concatenate(([0], np.cumsum(np.linalg.norm(x[:, 1:] - x[:, :-1], axis=0))))
+    L /= L[-1]
+    s = np.linspace(0, 1, N)
+    z = np.array([np.interp(s, L, x[j, :]) for j in range(M)])
+    return z
+
+
+def find_MEP(fun, x0, args=(), jac=None, tol=1e-6, max_iter=10000,
+             improved_tangent=True, method=None, repartition='spring'):
 
     x0 = np.asarray(x0)
     eps = np.sqrt(np.finfo(float).eps)
@@ -95,18 +104,19 @@ def find_MEP(fun, x0, args=(), jac=None, tol=1e-6, max_iter=10000, improved_tang
 
     if jac is None:
         jac = approx_fprime
-        kwargs = (fun, eps)
+        kwargs = (fun_wrapped, eps)
     else:
-        kwargs = ()
+        kwargs = args
 
     if method is None:
         method = 'SD'
 
     meth = method.lower()
+    repart = repartition.lower()
 
     force_max = 1.
     itr = 0
-    k_sp = 1.
+    k_sp = .01
     path = x0
     (M, N) = path.shape
     alpha = .01
@@ -115,9 +125,14 @@ def find_MEP(fun, x0, args=(), jac=None, tol=1e-6, max_iter=10000, improved_tang
         gradient = np.array([jac(path[:, j], *kwargs) for j in range(1, N-1)]).transpose()
 
         if meth == 'sd':
-            path, force_max = update_SD(path, gradient, tau, alpha, k_sp)
-        else:
-            path, force_max = update_tagentaware_proj(path, gradient, tau, alpha)
+            path, force_max = update_SD(path, gradient, tau, alpha)
+
+        if repart == 'spring':
+            path = repartition_spring(path, tau, k_sp)
+        elif repart == 'repar':
+            path = repartition_repar(path)
+        elif repart == 'repar_tangent':
+            path = repartition_tagentaware_proj(path, tau)
         itr += 1
     if force_max < tol:
         print("MEP was successfully found in %i iterations" % itr)
